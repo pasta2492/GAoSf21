@@ -1,0 +1,1559 @@
+---
+title: "Forfærdelig formelsamling"
+output:
+  html_document:
+    theme: readable
+    toc: true
+    number_sections: true    
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+
+options(digits = 7)        # number of digits printed by R default (vectors, data.frames, lists)
+options(pillar.sigfig = 7) # number of digits printed by tibbles default.
+```
+
+# Basic plots and formulas
+## Introduction (Chapter 1 and 2)
+
+### Tidying data
+This section aims to describe useful R-functions for making the data nice and tidy for plotting and analysis.
+#### Making vectors!
+
+Creating a vector with predefined values:
+
+`vector <- c(x1, x2, x3, xn)`
+
+Putting to vectors after eachother:
+
+`long_vector <- c(v1, v2)`
+
+Creating an empty vector of lenght `n` containing a certain value (eg. `NA`) in every position:
+
+`repeated_value <- rep(x, n)` 
+
+Creating a vector containging a sequence:
+
+`sequence <- seq(from, to, by)`
+
+  Or, if you just want have integers, you can do `sequence <- from:to`
+
+#### tibble() and data.frame()
+
+Creating a tibble (simple data frame):
+
+`data <- tibble(colname1 = v1, colname2 = v2, colnamen = vn)`
+
+If you refer to a non-existent column in a tibble, it will be added to the object!
+
+`data$colnamex <- colname1^2`
+
+Data frames are not special compared to tibbles, but they can have nice row-names:
+```
+data_frame <- data.frame(v1, v2)
+
+colnames(data_frame) <- c("colname1", "colname2")
+rownames(data_frame) <- c("rowname1", "rowname2")
+```
+
+#### Slicing and indexing
+When slicing and indexing in R, remember that it counts *from* 1.
+If you want to slice something, R takes the column-argument before the row-argument. See examples below.
+
+Retrieving a part of a tibble.
+`data[ci:cj]`
+Using one bracket and colon, you can get a specified section of columns (here column *i* to and inclusive column *j*) from your tibble and the **output** will be as a tibble. 
+
+If you want
+
+Retrieving a column from a tibble/data frame:
+
+`data$colname1` or `data[[1]]`
+Double brackets are used to get the **output** *values* as a vector and not a part of the tibble.
+
+
+```{r}
+
+#data[1] # gives c1
+#data[2,1:2] # gives r2
+#data[1, 1:2] # gives r1
+
+```
+
+
+#### filter()
+
+The
+
+#### summarise() and group_by()
+
+#### reshape2::melt() and facet_wrap() for plots
+
+### Histogram
+```{r}
+control <- c(98, 96, 88, 86, 82, 77, 74, 70, 60, 59, 52, 50, 47, 35, 29, 13, 6, 5)
+treatment <- c(100, 97, 96, 97, 93, 89, 88, 84, 77, 67, 61)
+
+# Man bliver nødt til at lave tibble manuelt hvis der ikke er lige mange værdier i de to kategorier.
+data <- tibble(value = c(control, treatment), 
+               variable = c(rep("control", length(control)), rep("treatment", length(treatment))))
+
+# Ellers kunne man bare bruge tibble(), efterfulgt af reshape2::melt()
+
+ggplot(data)+
+  geom_histogram(aes(x = value), color = "black", fill = "firebrick", bins = 15)+
+  theme_minimal()+
+  facet_wrap(~variable)
+
+```
+
+\n Hvis man gerne vil have *frequency* i stedet for *count* på sin y-akse, kan man bruge `y = ..count../sum(..count..)`
+
+```{r}
+ggplot(data)+
+  geom_histogram(aes(x = value, y = ..count../sum(..count..)), color = "black", fill = "firebrick", bins = 15)+
+  theme_classic()+
+  ylab("frequncy")+
+  scale_y_continuous(expand = c(0,0))+ #Får barerne til at røre bunden
+  facet_wrap(~variable)+
+  NULL
+```
+
+
+### Strip-chart / X,Y-plot
+Nedenfor er vist et strip-chart, men det kan selvfølgelig også få kontinuerte værdier i x og ikke kun kategoriske (som vist).
+```{r}
+ggplot(data)+
+  geom_point(aes(x = variable, y = value), color = "firebrick")+
+  theme_classic()
+```
+
+### Box-plot
+```{r}
+ggplot(data)+
+  geom_boxplot(aes(x = variable, y = value), fill = "goldenrod")+
+  theme_minimal()
+
+```
+
+## Describing data (Chapter 3 and 4)
+
+### Sample size
+$n$
+
+`length(), nrow(), ncol()`
+
+### Proportion
+$\hat{p} = \frac{n_{category}}{n_{total}}$
+
+`prop <- n_cat/n_total`
+
+### Mean
+$\bar{Y} =\frac{ \sum_{i = 1}^{n}{Y_i}}{n}$ 
+
+`mean(Y)`
+
+### Variance
+
+$var(Y) = s^2 = \frac{ \sum_{i = 1}^{n}{(Y_i - \bar{Y})^2}}{n-1}$
+
+`var(Y)`
+
+### Standard Deviation
+$s =\sqrt \frac{ \sum_{i = 1}^{n}{(Y_i - \bar{Y})^2}}{n-1}$
+
+`sd(Y)`
+
+What does the std dev tell you? The std dev tells you the spread of the sample is. 
+You can interpret as the average distance from the data points to the sample mean.
+
+### Coefficient of variation
+
+$CV = \frac{s}{\bar{Y}} \times 100\%$
+
+What the coefficient of variation tells us: The coefficient of variation tells us the average percentage of deviation from the sample values compared to the mean of our sample.
+
+### Standard Error
+
+$SE_\bar{Y} = \sqrt{\frac{s^2}{n}}= \frac{s}{\sqrt{n}} $
+
+If you want the mean and the standard error-interval use:
+
+`mean_se(Y)`
+This function has output in a vector of length 3 with the values mean, mean-SE, mean+SE
+
+R does not have a built-in function to only provide you with the standard error of a sample, so you might as well define your own functions or do it manually:
+
+```
+se <- sd(Y)/sqrt(length(Y))
+se <- sqrt(var(Y)/length(Y))
+```
+
+Or how to define a function that lets you repeat the process throughout your document:
+```
+se <- function(Y){
+  sqrt(var(Y)/length(Y))
+  }
+```
+
+What does the SE tell you? The SE of a sample tells you, how far the sample mean is from the population mean.
+Standard Error is the Standard Deviation of the population mean.
+
+Note that there is a relation between the std deviation (sd()) and the std error of the mean of the sample.
+You can derive the std dev, which you can use in formulas like the SE of the difference of means in a Welch's test.
+
+#### 2SE rule of thumb 95% Confidence Intervals
+
+$\bar{Y} -2 \times SE < \mu < \bar{Y} +2 \times SE$
+
+
+### Median, interquartile range and box-plots
+The median and the interquartile range describe where the data are spread around and how far from the median.
+The median can be explained as the midpoint of a scale with equal number of observations on each side of the value.
+
+If $n$ is odd:
+$\tilde{Y} = Y_{([n+1]/2)}$
+
+If $n$ is even:
+$\tilde{Y} = \frac{Y_{(n/2)}+ Y_{(n/2) + 1}}{2}$
+
+And the r-command:
+`median()`
+
+#### Interquartile range
+
+```{r}
+# Some data from tbale 3.2-1 in the book:
+before <- c(1.25, 2.94, 2.38, 3.09, 3.41, 3.00, 2.31, 2.93,
+            2.98, 3.55, 2.84, 1.64, 3.22, 2.87, 2.37, 1.91)
+
+# Interquartile range
+IQR(before)
+
+# Manual calculation of the interquartile range
+Q <- quantile(before,  probs = c(0, 0.25, 0.5, 0.75, 1))
+Q[4]-Q[2]
+
+
+# To use the method described in the book, specify type = 2:
+Q <- quantile(before, type = 2)
+Q
+Q[4]-Q[2]
+```
+
+Let's also make a beautiful box-plot to visualize the data:
+```{r}
+after <- c(2.40, 3.50, 4.49, 3.17, 5.26, 3.22, 2.32, 3.31,
+           3.70, 4.70, 4.94, 5.06, 3.22, 3.52, 5.45, 3.40)
+
+# You can make a nice tibble from the data of the vectors
+data <- tibble(before = before, after = after)
+data
+```
+
+The fast method to convert a data frame with several colums into a data frame with column-name as category and values is by using melt():
+
+```{r}
+melted_data <- reshape2::melt(data)
+melted_data
+```
+
+This is now ready to be plotted:
+
+```{r}
+ggplot(melted_data, aes(y = value))+
+  geom_boxplot(color = "black", fill = "gold")+
+  facet_wrap(~variable)+
+  # From here, it's purely aesthetics!
+  # Here we make it pretty
+  scale_x_discrete()+
+  scale_y_continuous(limits = c(0,6), breaks = seq(0,6, by = 1))+
+  # Color and labels
+  ylab("Running speed (cm/s)")+
+  theme_minimal()+
+  theme(axis.line = element_line(colour = "black"),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank())+
+  NULL
+```
+
+The *extreme* values of the boxplot are those defined as those that are further that 1.5 IQR away from the 1st 3rd quantile.
+
+$$Y < Q_1 - 1.5 \times IQR \lor Y < Q_3 + 1.5 \times IQR $$
+
+where we remember that $IQR = Q_3 - Q_1$
+
+> What do the whiskers show?
+
+The whiskers show the most extreme values, that are *not* outliers as defined above.
+
+## Multiplication of probabilities, probability trees, and Bayes Theorem (Chapter 5)
+
+You can assume a proportion of sample to be a probability.
+
+> The probability of two mutually exclusive events
+
+(like rolling 1 or 4 with *one* dice)
+$P(A\vee B) = P(A) + P(B)$
+
+> If outcome A and B are mutually exclusive
+
+$P(A \wedge B) = 0$
+(like rolling 1 and 4 with *one* dice)
+
+> The probability of an event *not* occuring
+
+$P(\lnot A) = 1 - P(A)$
+
+> The general addition rule: probability of two non-exclusive events
+
+$P(A \vee B) = P(A) + P(B) - P(A \wedge B) $
+
+(In this rule, we subtract the common amount)
+Probability of getting a red card or a queen from a card deck:
+$P(Q \vee red) =P(Q) + P(red) - P(red Q) = 4/52 + 26/52 - 1/52$
+
+> Multiplication rule: If two events are independent, then
+
+$P(A \wedge B) = P(A) \times P(B)$
+*remember smoking and high blood pressure*
+
+> Probability trees
+
+These are just visualizations of the combinations of events and their probabilities.
+
+> Bayes' theorem
+
+$P(A|B) = \frac{P(B|A)\cdot P(A)}{P(B)}$
+In regards to probability "|" means "given that" some event has also happened.
+> General multiplication rule:
+
+$P(A\wedge B) = P(A)\cdot P(B|A) = P(B) \cdot P(A|B)$
+
+
+
+# Definitions for statistics
+
+## Type I and II errors and power (Chapter 6)
+
+First, we need to establish the basic principles of hypothesis testing. 
+
+> Null hypothesis:
+
+$H_0:$ The statement that we would like to prove wrong about the data. 
+
+Examples:
+
+  * The means of two groups are equal (normal distribution/t-test/Welch's test)
+  * The probability of a True/False statement being True is a given value (binomial test)
+  * An allele is HW-distributed or number of births are equally distributed (Chi-square test)
+
+These are statements we want to prove *wrong*.
+
+
+> Type I error: 
+
+Rejecting a true null hypothesis. Defined by $\alpha$.
+
+> Type II error: 
+
+Failing to reject a false null hypothesis. 
+
+Examples:
+
+The $\alpha$-level is the probability of committing a type I error.
+The test we perform on two variables could tell us, that there is a 5% chance that this deviation could happen due to pure chance. Rejecting a null-hypothesis based on this significance level gives a 5% chance that the deviation *is* by pure chance and *not* by some alternative explanation.
+
+Type II errors happen when the null-hypothesis and the alternative hypothesis "overlap". Just as one can get an extremely high value by chance which leads to rejection of $H_0$, the sample could be really close to the test distribution by chance. 
+If there is a difference between two populations, but one happens to have a sample where the difference is small such that $H_0$ about them being equal can not be rejected and a type II error has been committed.
+
+> Significance level
+
+This is $\alpha$; the probability of the most extreme values of the $H_0$-distribution at which we decide the finding is too extreme to be under the null-hypothesis. This is something we decide ourselves and can be 0.05, 0.01 or 0.001.
+
+Significance at any level does not make one finding more prominent compared to the other; The p-values (and at what significance level $H_0$ is rejected) only indicates the probability of getting this difference to $H_0$. 
+
+You can not compare p-values from two different tests to say whether one is more is more significant than the other (straight/curved beer glasses). If the test for women drinking of two different glasses is significant at 0.01 where as the same test for a sample from men is P < 0.05 does not mean that the test for women is more significant. For both tests, there is a difference. 
+
+> P-value
+
+The probability of getting a value as extreme as the test statistic under the $H_0$-distribution.
+This value is compared to the significance level of the test.
+
+> Power and how to calulate it
+
+The **power** of a test is the probability of rejecting a false $H_0$. 
+
+It is known as $1- \beta$, where $\beta$ is the probability of committing a type II error.
+
+Assume that the distribution based on the sample is true and the null-distribution is false, then the power is a measurement for how much the two distributions *don't* overlap. 
+
+* A conventional power to aim for is 80%
+* With a high standard deviation, a larger sample size increases power
+* Lower standard deviation increases power
+
+How to calculate the $\beta$-value:
+
+$\beta = P(X > X_{crit} | X = X_A )$
+
+* First, determine the critical value of your statistic at which the $H_0$ is rejected.
+  * This could be using `qt(p = alpha, mean = mean, sd = sd, lower.tail = NULL)`, where you remember to determine whether you look at extremes at the higher side or lower side of $H_0$.
+* Then, assume that the value you determined *is actually true*.
+* Using this value to make a new distribution, $\beta$ is then the probability of getting a value more extreme than the critical value at which $H_0$ is rejected.
+
+#### Example of calulating $\beta$ and power
+```{r, echo = FALSE}
+# Assuming two means are equal:
+mu_0 <- 0
+# The difference in means was found to be
+mu <- -0.5
+# The standard deviation of the found mean:
+sd <- 0.2
+#sd <- 0.24
+# Assuming alpha = 0.05
+alpha <- 0.05
+# Caluculating the critical value
+crit <- qnorm(p = alpha, mean = mu_0, sd = sd)
+```
+
+
+```{r, echo = FALSE}
+# Making the two distributions
+X = seq(-2.5, 2.5, 0.01)
+Y_0 <- dnorm(x = X, mean = mu_0, sd = sd)
+Y <- dnorm(x = X, mean = mu, sd = sd)
+# Tidying data and plotting data
+data <- tibble(X = X, Y_0 = Y_0, Y = Y)
+melted_data <- reshape2::melt(data, id.vars = "X")
+
+ggplot(data = melted_data, aes(x = X, y = value, color = variable))+
+  geom_point()+
+  geom_vline(xintercept = crit)+
+  geom_text(aes(x = crit, label = "Critical value", y = 0.75), color = "black")+
+  NULL
+
+```
+
+Here, the critical value is plotted as a line. This line is the *one tailed* critical value at $\alpha = 0.05$. 
+
+By *assuming* the $\bar{Y}$ determined is the true value or if the true value is known, the power of the test can be determined. 
+
+In the example above, that would be $P(X<X_{\alpha=0.05, H_0})$ or `pnorm(q = X_crit, mean = mean_Y, sd = sd)`. In the tests, where R has a power-function, it will be provided in the following sections.
+
+# Statistical tests
+
+## Binomial distribution (Chapter 7)
+
+```{r, echo = FALSE}
+x <- seq(0,20,1)
+y <- dbinom(x,20,0.5)
+data <- tibble(x = x, y = y)
+ggplot(data, aes(x = x, y = y))+
+  geom_col(color = "black", fill = "firebrick", width = 1)+
+  theme_classic()+
+  xlab("X")+
+  ylab("probability P(X)")+
+  scale_x_continuous(expand = c(0,0), breaks = seq(0,20,1))+
+  scale_y_continuous(expand = c(0,0), limits = c(0,0.20))
+
+```
+
+
+> When to use the binomial distribution
+
+The binomial distribution is used when something is distributed in one category or the other. One group is then called the "succes" group. This could be "heads" out of "heads" and "tails" or rolling "6" with dice, OR whether something is left-handed or not.
+
+You can also use the binomial distribution to analyze more complex proportions such as:
+
+* Is the proportion of females in a population 0.5?
+* What proportion of patients survive after 10 years?
+* Are the proportion of spermatogenesis genes on the X-chromosome more frequent than on any other chromosome?
+    * $p_0 = n_{genes, X}/n_{genes, genome}$ and $\hat{p} = X/n_{genes, X}$ where $X = n_{spermatogenesis genes, X}$
+* What is the probability of finding more than 1 corona infection in 48 samples if the probabilty of the population is 0.01?
+
+> Assumptions for the binomial distribution
+
+* $n$ independent experiments, where the outcome can be desribed as a Boolean value
+  * Outcome is the *discrete* variable $X$
+* $p$ (the proportion or probability) is constant across all experiments
+
+> The distribution/probability density function
+
+$P(X) = {n\choose X}p^X(1-p)^{n-X}$
+where the binomial coefficient is:
+${X\choose n} = \frac{X!}{n!}$
+
+Note, that the values you "feed" into the function are discrete values.
+
+To get the probability of a given outcome, use:
+ 
+`dbinom(x, size, prob, log = FALSE)`
+
+The input is `x`=$X$, the number of "True"s from a sample of size `size` with a probability `prob`.
+
+> Estimation of probability from a sample
+
+$\hat{p} = \frac{X}{n}$
+
+> Estimation of standard error
+
+$SE_\hat{p} = \sqrt{\frac{\hat{p}(1-\hat{p})}{n}}$
+
+The standard error describes how much the sample probability varies from the population probability. 
+
+This standard error formula is used in the Agresti-Coull estimation for the 95% confidence interval for the probability of the test.
+
+R example to copy:
+
+```{r}
+# Define the values from your sample
+X <- 131
+n <- 169
+
+p_hat <- X/n
+SE_p <- sqrt((p_hat*(1-p_hat))/n)
+```
+
+
+> Estimation of confidence intervals (Agrestri-Coull):
+
+* This aims to finde the 95% CI for the population probabilty $p$
+$p' - 1.96 \sqrt{\frac{p'(1-p')}{n +4}} <p < p' + 1.96 \sqrt{\frac{p'(1-p')}{n +4}}$
+where:
+$p' = \frac{X + 2}{n+4}$
+
+```{r}
+# Define the values from your sample
+X <- 131
+n <- 169
+
+# formula for p'
+p_prime <- ((X+2)/(n+4))
+# The 95% CI for the population probability
+lower_lim <- p_prime - 1.96*sqrt((p_prime*(1 - p_prime))/(n + 4))
+lower_lim
+upper_lim <- p_prime + 1.96*sqrt((p_prime*(1 - p_prime))/(n + 4))
+upper_lim
+```
+If you use `binom.test()`, the confidence interval provided is the Clopper-Pearson confidence interval (not described in the book). 
+
+> Random sample generation from sample size and probability
+
+Generating a vector of length `n`, where each value represents number of successes, where there are `size`  number of trials and `prob` probability of *success*:
+
+`rbinom(n, size, prob)`
+
+> Cumulative probability *P* given an outcome *X* ouf of *n* trials.
+
+`pbinom(q, size, prob, lower.tail = TRUE, log.p = FALSE)`
+
+Pbinom has default lower.tail = TRUE which means, that if we look at the probability of X = 14 with n = 20 and p = 0.5, then it *adds up* the individual probabilities.
+
+$P(0\leq X \leq 14) = P(X = 0) + P(X = 1) +...+ P(X = 14)$
+
+If on the other hand, we want to see what the probability is of getting 14 or more, `pbinom` would count the probabilities of X *from* 15 and up as $P(X =14)$ would have been included in the lower.tail = TRUE of probabilities, such that 
+
+`pbinom(14, 20, 0.5, lower.tail = True) + pbinom(14, 20, 0.5, lower.tail = False) = 1`
+
+The correct `pbinom` statement for wanting the probability $P(14 \leq X \leq 20)$ would be `pbinom(q = 14 - 1, size = 20, prob = 0.5, lower.tail = FALSE)`
+
+> Finding the outcome *X* given a cumulativ probability *p* and sample size *n*
+
+To find the cut-off outcomes of a sample to reject $H_0$, you can use qbinom to find the "critical" $X$.
+
+`qbinom(p, size, prob, lower.tail = TRUE, log.p = FALSE)` 
+
+If we want to know at which value to reject $H_0$ given a sample size of 20 and probability of 0.5, we can say, that if we get less than 6 successes (0 to 5) of the sample, we can reject $H_0$ at $\alpha = 0.05$. 
+
+```{r}
+# Reject H_0 if you get strictly less than 6 successes
+qbinom(0.025, 20, 0.5)
+
+# Reject H_0 if you get equalt to 14 or more successes
+qbinom(0.975, 20, 0.5)
+qbinom(0.025, 20, 0.5, lower.tail = FALSE)
+```
+
+
+> Testing if a sample-proportion fits with a null-probability
+
+Testing if the observed number of *successes* from a sample fits to the hypothesized probability:
+The command asks you to enter the sample values $X$ and $n$ as well as the $p_{H_0}$. As default, the test checks two-sided for the $p$ and also provides a 95% confidence interval using the Pearson-Clopper method (not described in the book).
+
+`binom.test(x, n, p = 0.5, alternative = "two.sided", conf.level = 0.95)`
+
+Example:
+```{r}
+# From the good ol' toad example, where a success is right-handed
+binom.test(14, 18, p = 0.5)
+```
+
+
+## Chi square $\chi^2$ (Chapter 8)
+
+
+```{r, echo = FALSE}
+
+x <- seq(0,20, 0.02)
+y <- dchisq(x, df = 6)
+
+data <- tibble(x = x, y = y)
+
+ggplot(data, aes(x = x, y = y))+
+  #geom_line(size = 3)+
+  theme_classic()+
+  geom_ribbon(aes(ymin=0,ymax=pmax(data$y,0)), fill="firebrick", colour ="black", alpha=1, size = 2)+
+  scale_x_continuous(expand = c(0,0))+
+  scale_y_continuous(expand = c(0,0), limits = c(0,0.16))+
+  ylab("probability density")+
+  xlab("chi-squared, df = 6")
+
+```
+
+
+> When to use a $\chi^2$ test
+
+```{r}
+qchisq(0.05, df =6, lower.tail = FALSE)
+```
+
+
+You use the $\chi^2$-test if you have values, that are ***categorically distributed***. This could be corona infections for diffent agegroups ("vector") or with more categories like corona infections for different age groups *and* genders (contingency table).
+
+The test is generally the right choice, but if you have a contingency table of $2 \times 2$, remember Fisher's exact test (next section).
+
+* If you have data set (table or vector) and an expected distribution (matching dimension)
+  * Distribution of births on a week compared to an evenly distribution
+  * Genotypes and expected Hardy-Weinberg proportions from the allele-counts
+* Observed proportion compared to an expected proportion
+  * Can be instead of using bionomial test for computational reasons
+
+
+> The test statistic $\chi^2$
+
+Compare the observed values to the expected:
+
+$\chi^2 = \sum_i \frac{(Observed_i- Expected_i)^2}{Expected_i}$
+
+The $\chi^2$ value is a value for the discrepancy between the expected and observed values. 
+
+To determine whether this discrepancy is too extreme for the expected $H_0$ distribution of the data, we need to compare it with the right model for the chi-square distribution. 
+
+This also means that the $\chi^2$-test is *one tailed* and *one tailed* only as it looks at the overall deviation from the postulated distribution along the categories. 
+
+> How to find the right $\chi^2$ model/degrees of freedom
+
+If your data comes in one vector, then the degrees of freedom are $df = n-1$, where $n$ is the number of data points.
+
+If your data comes in contingency table, then the degrees freedom are $df = (i-1)\times(j-1)$
+
+We do not need to know the different $\chi^2$ distributions and how they relate to $df$ but we have some usefull functions.
+
+> Knowing the $\chi^2$ value and wanting the probability
+
+The pchisq() function gives the probability of the observed deviation (the $\chi^2$ test statistic). 
+
+* `q` is the test statistic aka the calculated $\chi^2$
+* `df`is the degrees of freedom that depends on the number of data points/categories of the data.
+* `lower.tail = FALSE` needs to be specified as you usually want to have the probability of an equally or more extreme $\chi^2$ value aka. the *p*-value.
+
+```{r}
+pchisq(q = 15.795, df = 6, lower.tail = FALSE)
+```
+
+> Having a probability and wanting to find the critical chi-square value
+
+In this formula, you want to specify the probability *p*, the degrees of freedom (which depends on the amount of data points in your table/vector), and that `lower.tail = FALSE` if you are looking at the "high end" of the tail of the distribution.
+
+`qchisq(p = alpha, df = df, lower.tail = FALSE)`
+
+> Generating a random sample
+
+This function gives you *n* random values for $\chi^2$.
+
+`rchisq(n, df)`
+
+```{r}
+values <- rchisq(10000, df =6)
+data <- tibble(values = values)
+
+ggplot(data, aes(x = values))+
+  geom_histogram(color = "black", fill = "firebrick")+
+  theme_classic()+
+  scale_x_continuous(expand = c(0,0))+ # Får diagrammet til at røre y-aksen
+  scale_y_continuous(expand = c(0,0)) # Får diagrammet til at røre bunden
+```
+
+> Example using the $\chi^2$ test for a column of observations
+
+```{r}
+# This is the example with births and weekdays
+observed <- c(14, 26, 34, 21, 27, 38, 20)
+expected <- c(52/366, 52/366, 52/366, 52/366, 52/366, 53/366, 53/366)*180
+
+df = length(observed)-1
+chi2 <- sum(((observed-expected)^2)/expected)
+
+pchisq(q = chi2, df = df, lower.tail = FALSE)
+```
+
+> Example using the $\chi^2$ test for a contingency table
+
+First, we look at the table with categories on each dimension. If your contingency table is 2 by 2 - **perform a Fisher's exact test**. Otherwise, continue to calclulate the expected frequencies.
+
+```{r, echo = FALSE}
+category <- c("Eaten", "Not eaten")
+infection <- c("Uninfected", "Lightly infected", "Highly infected")
+
+data <- data.frame(c(1, 49), c(10, 35), c(37,9))
+
+rownames(data) <- category
+colnames(data) <- infection
+```
+```{r}
+data
+
+chisq.test(data, correct = FALSE)
+```
+
+The `chisq.test()` finds the expected values by it self. If you give it a dataframe/tibble, it will calculate the expected values. If you give it a vector, it will assume there is an even distribution.
+
+
+Or if you have to do it manually, here's an example:
+
+```{r}
+total <- sum(data)
+p_r1 <- sum(data[1,1:3])/total # grabbing the data from row 1
+p_r2 <- sum(data[2,1:3])/total
+
+rows <- c(p_r1, p_r2)
+
+p_c1 <- sum(data[1])/total
+p_c2 <- sum(data[2])/total
+p_c3 <- sum(data[3])/total
+
+
+expected <- data.frame(rows*p_c1, rows*p_c2, rows*p_c3)*total
+observed <- data
+
+chi2 <- sum(((observed-expected)^2)/expected)
+df <- (nrow(data)-1)*(ncol(data)-1)
+
+pchisq(q = chi2, df = df, lower.tail = FALSE)
+```
+
+### Yates correction for continuity ($2\times 2$ tables), but don't use this shite approximation
+
+If you have a 2 by 2 table you can use the Yates corrected method, but you probably want to get the exact P-values, so opt for Fisher's exact test unless specified otherwise.
+
+$\chi^2 = \sum_i \frac{(|Observed_i- Expected_i|-\frac{1}{2})^2}{Expected_i}$
+
+
+```{r, echo = FALSE}
+fertility <- c("Estrous", "Not estrous")
+bite <- c("Bitten", "Not bitten")
+
+data <- data.frame(c(15, 7), c(6, 322))
+
+rownames(data) <- fertility
+colnames(data) <- bite
+
+total <- sum(data)
+p_r1 <- sum(data[1,1:2])/total # grabbing the data from row 1
+p_r2 <- sum(data[2,1:2])/total
+
+rows <- c(p_r1, p_r2)
+
+p_c1 <- sum(data[1])/total
+p_c2 <- sum(data[2])/total
+
+
+expected <- data.frame(rows*p_c1, rows*p_c2)*total
+observed <- data
+```
+
+```{r}
+data
+chi2 <- sum(((abs(observed-expected)-0.5)^2)/expected)
+pchisq(q = chi2, df = 1, lower.tail = FALSE)
+```
+
+Or use the formula:
+```{r}
+chisq.test(data, correct = TRUE)
+```
+
+
+> dchisq()
+
+You will probably not need this function, but it gives you the probability density which is the probability (y-value) for *one* exact point 8($\chi^2$-value). It was used to make the diagram in the beginning of this section.
+
+`dchisq(x, df)`
+
+### Fisher's exact test ($2\times 2$ tables) (Section 9.5)
+
+Fisher's exact test examines the independence of two categorical variables even with small expected values. If there is no bias then the odds ratio is 1. This corresponds to a chi
+
+Fisher's exact test finds the P-value of getting a table as extreme or more extreme under the null-hypothesis. 
+
+> When to use Fisher's exact test?
+
+Every time you want the probability of having the specific ratios presented in a $2\times 2$ table. This method uses odds-ratios to describe the deviations in the table, when the rules for the $\chi^2$-test are not met (more than 20% of the expected values are less than 5). 
+
+To calculate it, use:
+```{r}
+data
+fisher.test(x = data)
+```
+
+
+## Relative Risk and Odds ratio in contingency tables ($2\times 2$ tables) (Chapter 9)
+
+```{r, echo = FALSE}
+data <- data.frame(c("a", "c"), c("b", "d"))
+
+treatment <- c("Treatment", "Control")
+outcome <- c("Success", "Failure")
+
+rownames(data) <- outcome
+colnames(data) <- treatment
+```
+
+```{r, echo = FALSE}
+knitr::kable(data)
+```
+> When to use RR or OR on a contingency table?
+
+If you want to compare two probabilities from a $2\times 2$ table, you can analyze the *risk* and *relative risk* or the *odds* and *odds ratio*, depending on what the question asks for. 
+
+### Relative risk $\hat{RR}$
+
+
+```{r, echo = FALSE}
+data <- data.frame(c(1438, 18496), c(1427, 18515))
+
+treatment <- c("Aspirin", "Control")
+outcome <- c("Cancer", "Healthy")
+
+rownames(data) <- outcome
+colnames(data) <- treatment
+```
+
+```{r}
+knitr::kable(data)
+```
+
+The relative risk is the ratio between two probabilities from a contingency tables that looks at two samples with two categories. 
+
+$\hat{RR} = \frac{\hat{p_1}}{\hat{p_2}}=\frac{\frac{a}{a+c}}{\frac{b}{b+d}}$
+
+The Standard Error of the log Relative Risk:
+$SE[\ln(\hat{RR})] = \sqrt{\frac{1}{a} + \frac{1}{b}-\frac{1}{a+c}-\frac{1}{b+d}}$
+
+And the 95% confidence interval:
+
+$\ln(\hat{RR})-Z\times SE[\ln(\hat{RR})] < \ln(RR) < \ln(\hat{RR})+ Z\times SE[\ln(\hat{RR})]$
+
+This means, we have to convert it into log(RR) to obtain the confidence interval and then revert it back using the exponential function.
+
+Example using R:
+```{r}
+#data[r,c]
+#data[c]
+p1 <- data[1,1]/sum(data[1])
+p2 <- data[1,2]/sum(data[2])
+RR <- p1/p2
+lnRR <- log(RR)
+SElnRR <- sqrt(1/data[1,1] + 1/data[1,2] - 1/sum(data[1]) - 1/sum(data[2]))
+# Confidence interval for the ln(RR)
+lower_lim <- lnRR - 1.96*SElnRR
+lower_lim
+upper_lim <- lnRR + 1.96*SElnRR
+upper_lim
+
+# And giving the values we prbobaly want to look at:
+lower_lim <- exp(lnRR - 1.96*SElnRR)
+lower_lim
+upper_lim <- exp(lnRR + 1.96*SElnRR)
+upper_lim
+```
+
+Reduction in relative risk:
+$1-\hat{RR}$
+
+### Odds ratio $\hat{OR}$
+
+$O = \frac{p}{1-p} = \frac{successes}{failures}=\frac{a}{c}$
+
+$\hat{OR} = \frac{a/c}{b/d}=\frac{ad}{bc}$
+
+Standard Error of the log odds ratio:
+
+$SE[\ln(\hat{OR})] = \sqrt{\frac{1}{a} + \frac{1}{b} + \frac{1}{c} + \frac{1}{d}}$
+
+And the 95% confidence interval:
+
+$\ln(\hat{OR})-Z\times SE[\ln(\hat{OR})] < \ln(OR) < \ln(\hat{OR})+ Z\times SE[\ln(\hat{OR})]$
+
+R Example using data:
+
+```{r}
+a <- data[1,1]
+b <- data[1,2]
+c <- data[2,1]
+d <- data[2,2]
+
+OR <- (a*d)/(b*c)
+
+SElnOR <- sqrt(1/a + 1/b + 1/c + 1/d)
+lnOR <- log(OR)
+
+# And giving the values we prbobaly want to look at:
+lower_lim <- exp(lnOR - 1.96*SElnOR)
+lower_lim
+upper_lim <- exp(lnOR + 1.96*SElnOR)
+upper_lim
+
+```
+
+
+## Poisson distribution (Chapter 8.4)
+
+```{r, echo = FALSE}
+x <- 0:10
+y <- dpois(x = x, lambda = 2)
+data <- tibble(x = x, y = y)
+
+ggplot(data, aes(x = x, y = y))+
+  geom_point(color = "firebrick", size = 3)+
+  geom_line(color = "black")+
+  scale_x_continuous(expand = c(0,0.01), breaks = 0:10)+
+  scale_y_continuous(expand = c(.01,0))+
+  theme_classic()+
+  ylab("Probability density")+
+  xlab("X, Poisson distribution")
+  
+
+```
+
+
+> When to use the Poisson distribution?
+
+If something is Poisson distributed, we test if something is distributed randomly.
+The Poisson distribution is usefull if you have discrete variable and a frequency for that variable. 
+
+$P(X) = \frac{e^{-\lambda}\lambda^X}{X!}$
+
+Where $E(X) = \bar{X} = \lambda$ and $var(X) = \lambda$.
+
+  * If the variance is greater than the mean, the successes are clumped.
+  * If the variance is less than the mean, successes are more evenly distributed than expected by the Poisson distribution.
+  * With the mean being equal to the variance you would expect $\frac{\bar{X}}{var(X)}=1$
+
+The Poisson distribution can be used if you have a *discrete* outcome of your experiment.
+
+Where the binomial distribution tests for a probability, the Poisson distribution tests for randomness.
+
+
+The "challenge" when using the Poisson distribution is to determine the $\lambda$ for whatever experiment you are looking at.
+
+Examples:
+If you want to know the probability to find at least 1 virus particle from one postive person in 48 samples, knowing a positive person sheds 50 virus particles, then you would define lambda as:
+$\lambda = 50\times\frac{1}{48}$
+
+Then you would want to use the formula:
+$P(X=1) = \frac{e^{-50/48}\times 50/48^1}{1!}$
+
+
+You can use the Poisson distribution on frequency data where you have a numerical discrete outcome. 
+
+Example with how many goals were scored in 112 different soccer matches.
+
+```{r, echo=FALSE}
+data_frame <- data.frame(c(0,1,2,3,4,5), c(32,44,21,10,4,1))
+colnames(data_frame) <- c("Number of goals", "Frequency")
+#rownames(data_frame) <- c()
+```
+
+```{r, echo = FALSE}
+knitr::kable(data_frame)
+```
+
+```{r}
+# Determining the number of experiments
+n <- sum(data_frame[2])
+# Determining the sum of counts for all n experiments
+total_counts <-data_frame[1]*data_frame[2]
+X <- sum(total_counts)
+# Number of goals scored on average
+# Average count pr. experiment
+lambda <- X/n
+lambda
+```
+
+This function takes the following arguments; 
+  * `x` is the number of events
+  * `T`is the number of experiments or the time frame
+  * `r`is the postulated average $\lambda_0$ of events pr. time frame given the variable is Poisson distributed.
+
+```
+poisson.test(x = 137, T = 112, r = lamda_0)
+```
+
+> Wanting to get the probability of one outcome given the mean
+
+This is the probability density for a specific outcome $X$ if it is Poisson distributed.
+
+$P(X) = \frac{e^{-\lambda}\lambda^X}{X!}$
+
+`dpois(x, lambda)`
+
+> The cumulative probability for a range of outcomes
+
+The probability for a range of outcomes is the same as the sum of probabilities for each outcome in the range.
+
+$P(i \leq X\leq j ) = \frac{e^{-\lambda}\lambda^i}{i!} + ...+\frac{e^{-\lambda}\lambda^j}{j!}$
+
+Or using the R-function:
+
+```
+ppois(q, lambda, lower.tail = TRUE)
+```
+This one is like for `pbinom()` where it evaluates from 0 to and inclusive `q` if `lower.tail = TRUE`.
+
+If you were to have the probability of getting eg. 3 or more ($P(5\leq X)$), then subtract one. In this case it would be:
+`ppois(q = 5-1, lambda = 1.223, lower.tail = FALSE)`
+
+> Having the probability and wanting to find the critical values
+
+```    
+qpois(p, lambda, lower.tail = TRUE)
+
+```
+You use this, if you know the lambda value of the population and you want to know the cut-off value for getting an extreme result with a given significance level. 
+
+For the soccer experiment, 95% of the of outcomes of the Poisson distributed variable will be 3 or less.
+```{r}
+qpois(0.95, 1.223)
+qpois(0.05, 1.223, lower.tail = FALSE)
+
+```
+Scoring 4 goals or more would reject the $H_0$ of $\lambda = 1.223$
+
+> Evaluating whether something is indeed Poisson distributed
+
+To determine whether something is Poisson distributed, calculate the mean of your data make the Poisson distribution.
+
+```{r}
+# Vector for expected count for the points in the diagram
+expected_count <- dpois(0:5, 1.223)*112
+
+ggplot(data_frame)+
+  geom_col(aes(x = `Number of goals`, y = `Frequency`), color = "black", fill = "firebrick", width = 1)+
+  geom_point(aes(x=`Number of goals`, y = expected_count))+
+  theme_classic()+
+  scale_y_continuous(expand = c(0,0))
+```
+
+You would then be able to compare the data set to the Poisson-distribution using the same mean as the $H_0$ for a regular $\chi^2$-test.
+
+> Simulating a Poisson distributed variable
+
+This function gives you a vector of length `n` where you get a Poisson distributed outcome with a specified average and variance $\lambda$.
+
+``` 
+rpois(n, lambda)
+```
+```{r}
+set.seed(69)
+rpois <- rpois(100, lambda = 1.223)
+pois_tibble <- tibble(rpois = rpois)
+ggplot(pois_tibble)+
+  geom_histogram(aes(x = rpois), color = "black", fill = "firebrick", binwidth = 1)+
+  scale_x_continuous(breaks = 0:5)+
+  scale_y_continuous(expand = c(0,0))+
+  theme_classic()
+```
+
+
+## Normal distribution and t-test (Chapter 10-12)
+
+> When to use the normal distribution and it's usefull cousin, the *t*-distribution
+
+If you have a variable which you assume is distributed evenly around a mean value. 
+
+### Normal distribution/Gauss distribution
+
+```{r, echo = FALSE}
+x <- seq(-3,3,0.01)
+y <- dnorm(x)
+data <- tibble(x = x, y = y)
+
+ggplot(data, aes(x = x, y = y))+
+  #geom_line(size = 3)+
+  theme_classic()+
+  geom_ribbon(aes(ymin=0,ymax=y), fill="firebrick", colour ="black", alpha=1, size = 2)+
+  scale_x_continuous(expand = c(0,0))+
+  scale_y_continuous(expand = c(0,0), limits = c(0,0.45))+
+  ylab("Probability density")+
+  xlab("Z")
+
+```
+> When to use the normal distribution
+
+You use the normal distribution if you want to know how far a sample value is from the true mean.
+This infers you know the true standard deviation and the true mean of the population (or at least have enough data to call it a population).
+
+The normal distribution assumes that values appear around mean with a certain standard deviation.
+
+$f(Y) = \frac{1}{\sqrt{2\pi\sigma}}e^{\frac{-(Y-\mu)^2}{2\sigma^2}}$
+
+The formula says, that the probability of a certain value $Y$ around the mean $\mu$ is dependent on the standard deviation $\sigma$.
+
+> The standard error of the mean
+
+If you want to know, how far the sample mean is from the true mean, you want to find the standard error of the sample mean.  
+$\sigma_{\bar{Y}}=\frac{\sigma}{\sqrt{n}}$
+To find this, you **need the standard deviation of the population** you are comparing your sample to.
+
+> The **standard normal distribution**
+
+The standard normal distribution has a mean of 0 and a standard deviation of 1. This is like the distribution in the beginning of this section.
+
+If a variable $Y$ has a normal distribution, then the sample means $\bar{Y}$ has a normal distribution as well.
+
+$Z$ is the standard normal deviation.
+
+To find what $\Z$ value a sample mean corresponds to on the standard normal distribution, we use the formula:
+$Z = \frac{\bar{Y}-\mu}{\sigma_{\bar{Y}}}$,
+where we remember that $\sigma_{\bar{Y}}=\frac{\sigma}{\sqrt{n}}$. 
+
+The $Z$-value is useful to readily compare it to the critical value determined from the significance level.
+
+You can find the $Z$-value for your significance level using `qnorm`:
+```{r}
+alpha = 0.05
+qnorm(p = alpha/2)
+```
+
+> Central limit theorem
+
+If you take a lot of samples of something that is not normally distributed, then the sample means will be normally distributed anyway.
+
+> Confidence interval for the mean
+
+To obtain the confidence interval for different variables that are normally distributed due to the central limit theorem, we exploit the Z-value for the given area under the graph that we determine the confidence interval to be.
+
+If we want to know the 95% confidence interval for a normally distributed variable (which we know it is due to the central limit theorem), then we just have to adapt the sample distribution mean as the mean and we know that the 95% area will be defined by $Z_{\alpha/2}\times SE_{\bar{Y}}$ distance from the $\bar{Y}$.
+
+The $Z$-value determination for a given significance level was demonstrated above.
+
+> Calculating the probability
+
+If you have the mean and the standard deviation of the population and you want the probability of a value more extreme than a certain value you want the area under the normal distribution:
+
+$P(Y \leq x) =\int^x_{-\infty} \frac{1}{\sqrt{2\pi\sigma}}e^{\frac{-(Y-\mu)^2}{2\sigma^2}}$
+
+The other example would be:
+$P(Y \geq x) =\int_x^{\infty} \frac{1}{\sqrt{2\pi\sigma}}e^{\frac{-(Y-\mu)^2}{2\sigma^2}}$
+
+The R-function for this kind of calculation is:
+```
+pnorm(q, mean, sd, lower.tail = TRUE)
+
+```
+Where `q` is the $x$, `mean` is $\mu$ and `sd`is $\sigma$. You can then specify whether you would like the `lower.tail` or the probability of a higher test statistic than $x$.
+
+This function gives you the one-tailed probability of the deviation. 
+If you want the probability of getting a value equal to or more extreme (two-tailed), remember to multiply the probability by factor two. 
+
+
+> Generating a random normally distributed sample
+
+To generate a random sample, `rnorm(n, mean, sd)` will do the job.
+
+#### Normal approximation to the binomial test
+
+```{r, echo = FALSE}
+n <- 20
+x <- 0:n
+p <- 0.5
+
+binom <- dbinom(x, n, p)
+norm_approx <- dnorm(x, mean = n*p, sd = sqrt(n*p*(1-p)))
+
+data <- tibble(x = x, binom = binom, norm_approx = norm_approx)
+
+ggplot(data, aes(x = x))+
+  geom_col(aes(y = binom), fill = "firebrick", width = 1, color ="black")+
+  geom_line(aes(y = norm_approx), size = 2)+
+  ylab("Probability density")+
+  theme_classic()
+
+
+```
+
+If you have a large trial number *n* in a binomial test, you can use the normal approximation. This is useful if you have one big sample and a hypthesized *p* you want to get a $P$-value for your sample.
+
+It assumes that:
+
+* *np* and *n*(1-*p*) are greater than 5
+
+$\mu = np$
+
+$\sigma = \sqrt{np(1-p)}$
+
+AND, to calculate the standard normal deviation you want to either add or subtract 1/2 as a *continuity correction*.
+
+$P(X \geq X_{observed})=P(Z> \frac{X_{observed}-1/2-np}{\sqrt{np(1-p)}})$
+$P(X \leq X_{observed})=P(Z> \frac{X_{observed}+1/2-np}{\sqrt{np(1-p)}})$
+
+### *t*-test
+
+```{r, echo = FALSE}
+x <- seq(-4,4,0.01)
+y <- dt(x, df = 4)
+data <- tibble(x = x, y = y)
+ggplot(data, aes(x = x, y = y))+
+  #geom_line(size = 3)+
+  theme_classic()+
+  geom_ribbon(aes(ymin=0,ymax=pmax(data$y,0)), fill="firebrick", colour ="black", alpha=1, size = 2)+
+  scale_x_continuous(expand = c(0,0))+
+  scale_y_continuous(expand = c(0,0), limits = c(0,0.4))+
+  ylab("Probability density")+
+  xlab("t-distribution, df = 6")
+```
+
+
+The *t*-distribution probality density formula is so disgustingly ugly, I won't put it in this document. Just accept, that R will use it to calculate stuff for you.
+
+> When to use the *t*-distribution
+
+The *t*-distribution is used when you don't know the standard deviation of the *population* to determine the standard error of the sample. Remember, the *standard error* tells you how far from the true mean your sample mean is. 
+
+Instead, you use the sample standard deviation as an *estimate* for the population standard deviation such that:
+$SE_{\bar{Y}} = \frac{s}{\sqrt{n}}$ where *s* is the standard deviation **of the sample**.
+
+To get the test statistic called *t* you use:
+$t = \frac{\bar{Y}-\mu}{SE_{\bar{Y}}}$
+
+Where $\mu$ is the mean postulate in your $H_0$.
+
+To use the test-statistic derived from the standard error of your sample mean and the sample mean, you also need to determine the *degrees of freedom* for your test.
+
+$df = n-1$, where $n$ is the sample size. 
+
+If you have a high degree of freedom or sample size (10 or more), you can just assume a Gaussian distribution/normal distribution.
+
+### One sample *t*-test
+You make a one sample *t*-test if you have a sample and want to compare that to a postulated mean.
+
+Example using R:
+
+Here the $H_0$ is that $\bar{Y} = \mu =8.5$
+```{r}
+sample <- c(8.69, 8.15, 9.25, 9.45, 8.96, 8.65, 8.43, 8.79, 8.63)
+mean <- mean(sample)
+sd <- sd(sample)
+SE <- sd/sqrt(length(sample))
+df <- length(sample)-1
+
+mu <- 8.5
+
+# Determining the test statistic
+t <- (mean-mu)/SE
+# The two-tailed probability of getting a deviation this big:
+2*pt(q = t, df = df, lower.tail = FALSE)
+# This example deviation has P-value of 0.06 and we can not reject the H_0.
+```
+
+> Confidence interval for the mean
+
+If you want to determine the confidence interval for a *t*-distributed value, such as the sample mean, we need to determine the fitting *t*-value that determines the specified area under the curve. 
+
+The confidence interval can then be determined:
+
+$\bar{Y}-t_{\alpha(2),df} SE_{\bar{Y}} < \mu < \bar{Y}+t_{\alpha(2),df} SE_{\bar{Y}}$
+
+
+For a 95% confidence interval for at *t*-distributed value, we find the critical *t*-values:
+
+```{r}
+t_alpha <- abs(qt(p = alpha/2, df = df))
+
+lower_lim <- mean - t_alpha*SE
+lower_lim
+upper_lim <- mean + t_alpha*SE
+upper_lim
+```
+
+In R, you can use the `t.test()` function to obtain the confidence interval for a mean based on a sample vector. This function has a lot of functionality
+```{r}
+test <- t.test(x = sample, conf.level = 0.95)
+test
+# Confidence interval
+test$conf.int[1:2]
+```
+This function takes a lot of different arguments. If you want to test your sample mean in relation to the $H_0$ postulated $\mu$, you can provide that to it:
+```{r}
+test <- t.test(x = sample, mu  = 8.5, alternative = "two.sided")
+test
+test$p.value
+```
+> Confidence interval for the variance
+
+To obtain the confidence interval for the variance of a sample, we use the $\chi^2$ distribution at $n-1$ degrees of freedom.
+
+$\frac{df\times s^2 }{\chi^2_{\alpha/2, df} } < \sigma^2 < \frac{df\times s^2 }{\chi^2_{1-\alpha/2, df} }$
+
+And example in R:
+```{r}
+sample
+alpha <- 0.05
+var <- var(sample)
+df <- length(sample)-1
+
+# And giving the values we prbobaly want to look at:
+lower_lim <- (df*var)/qchisq(p = alpha/2, df = df, lower.tail = FALSE)
+lower_lim
+upper_lim <- (df*var)/qchisq(p = (1- (alpha/2)), df = df, lower.tail = FALSE)
+upper_lim
+
+```
+Having the confidence interval for the variation also gives you the confidence interval for the standard deviation:
+
+$\sqrt{\frac{df\times s^2 }{\chi^2_{\alpha/2, df} }} < \sigma < \sqrt\frac{df\times s^2 }{\chi^2_{1-\alpha/2, df} }$
+
+```{r}
+lower_lim <- sqrt((df*var)/qchisq(p = alpha/2, df = df, lower.tail = FALSE))
+lower_lim
+upper_lim <- sqrt((df*var)/qchisq(p = (1- (alpha/2)), df = df, lower.tail = FALSE))
+upper_lim
+```
+
+
+
+### Two-sample *t*-test
+You perform a two sample *t*-test if you have two samples, that can be paired or not (depending on the experiment), and want to compare the means of the samples to eachother.
+
+#### Paired two-sample *t*-test
+**A paired two-sample test** assumes that the individuals of the sample are the same. The classical case is one measurement *before* and one *after* treatment of the individual. It could also be twin studies. Paired measurements are converted to a single measurement by taking the difference between them.
+
+$\bar{d} =\frac{\sum(after - before)}{n}$
+
+The standard deviation and variance are performed on the values for the *differences* between the to measurements as if it was a one sample *t*-test. Evaluation to the $H_0$ is just done using the difference mean and difference standard deviation. The $H_0$ typically is that the $\bar{d}=0$. In the R-command this corresponds to `t.test(x = sample, mu = 0)` 
+
+Or if you have your data as two vectors (of equal length) you can use:
+```
+t.test(x = sample1, y = sample2, mu = 0, paired = TRUE)
+```
+
+#### Two-sample *t*-test and Welch's *t*-test
+**A regular two sample test** has two different groups of samples. This could be a control and a treatment group.
+
+> When to use a two-sample *t*-test
+
+If you want to compare the means between two groups. Remember to look at your sample variances and sample sizes if the Welch test would be a better fit.
+
+> When to use a Welch's *t*-test
+
+If you want to compare the means between two groups that *do not* have equal variance or you have a small sample size (<30) or both.
+
+The rule of thumb for unequal variance is that $\frac{s^2_1}{s^2_2} <3$ or when $\frac{s^2_2}{s^2_1} <3$.
+
+**Normally, R knows when to perform the Whelch's *t*-test by itself**
+
+
+#### Regular two-sample *t*-test
+
+> Standard error for the difference between the two means
+
+$SE_{\bar{Y_1}-\bar{Y_2}} = \sqrt{s_p^2(\frac{1}{n_1}+\frac{1}{n_2})}$
+
+Here, $s^2_p$ is the pooled variance of the two sample means.
+
+> Pooled variance of the two samples
+
+$s^2_p = \frac{df_1 s_1^2+df_2s_2^2}{df_1 + df_2}$
+
+The degrees of freedom are for each individual sample where $df = n-1$.
+
+> Getting the test statistic
+
+
+$t = \frac{(\bar{Y}_1-\bar{Y}_2)- (\mu_1-\mu_2)}{SE_{\bar{Y_1}-\bar{Y_2}}}$
+
+Here, you find the difference between the two sample means and subtract the hypothesized difference in sample means under $H_0$. Usually, the $H_0$ is that there is no difference in the sample means which means that $\mu_1 - \mu_2 = 0$
+
+The degrees of freedom are $df = df_1 + df_2$
+
+> The confidence interval for the true difference in means
+
+$({\bar{Y_1}-\bar{Y_2}})-t_{\alpha(2),df} \times SE_{\bar{Y_1}-\bar{Y_2}} < \mu_1 -\mu_2< ({\bar{Y_1}-\bar{Y_2}})+t_{\alpha(2),df} \times SE_{\bar{Y_1}-\bar{Y_2}}$
+
+An example of it all in R:
+```{r}
+# Sample sizes and values
+# Either variance or sd for each sample (remember sd is sqrt(var))
+mean1 <- 10.44
+n1 <- 6
+sd1 <- 0.69
+var1 <- sd1^2
+df1 <- n1 - 1
+
+mean2 <- 8.44
+n2 <- 8
+sd2 <- 1.03
+var2 <- sd2^2
+df2 <- n2 - 1
+
+```
+
+Getting the values for the difference in means:
+```{r}
+var_p <- (df1*(sd1^2) + df2*(sd2^2))/(df1 + df2)
+SE_diff <- sqrt(var_p*(1/n1 + 1/n2))
+df <- df1 + df2
+
+t <- (mean1 - mean2)/SE_diff # This one is under the H_0 that mu1 - mu2 = 0
+```
+
+If you just want to compare the *t*-value to the critical *t*-value:
+```{r}
+alpha <- 0.05
+crit_t <- qt(p = alpha/2, df = df, lower.tail = F)
+# Is the t-value(test statistic) more extreme than the critical t-value under the given significance level?
+t >= crit_t
+```
+
+If you want to obtain the $P$-value for the difference in means being different from the $H_0$ postulated difference:
+
+```{r}
+# Probability of getting the difference
+2*pt(q = t, df = df, lower.tail = FALSE)
+```
+
+The confidence interval for a given significance level:
+```{r}
+t <- abs(qt(p = alpha/2, df = df))
+
+lower_lim <- (mean1 - mean2) - t*SE_diff
+lower_lim
+upper_lim <- (mean1 - mean2) + t*SE_diff
+upper_lim
+
+```
+
+
+##### Welch's *t*-test
+In Welch's *t*-test we do not need to finde a pooled variance to get the standard error of the difference in sample means.
+
+> Welch's test standard error
+
+$SE_{\bar{Y_1}-\bar{Y_2}} = \sqrt{\frac{s_1^2}{n_1}+\frac{s_2^2}{n_2}}$
+
+> Welch's test test statistic and degrees of freedom
+
+The test statistic is the same but with the different version of the standard error:
+
+$t = \frac{(\bar{Y}_1-\bar{Y}_2)- (\mu_1-\mu_2)}{SE_{\bar{Y_1}-\bar{Y_2}}}$
+
+And the degrees of freedom:
+
+$df = \frac{(\frac{s_1^2}{n_1}+\frac{s_2^2}{n_2})^2}{(\frac{(s_1^2/n_1)^2}{n_1-1}+\frac{(s_2^2/n_2)^2}{n_2-1})}$
+
+The book says to round it down to the nearest integer, but R does not do that in the t.test-function.
+
+Use the function:
+```
+t.test(x = sample1, y = sample2, mu = 0, paired = FALSE, var.equal = FALSE, conf.level = 0.95)
+```
+Or if you want to perform a Welch's test manually but do not want to write that out in R, you can copy the formula below:
+
+```{r}
+SE_diff <- sqrt((var1/n1) + (var2/n2))
+t <- (mean1 - mean2)/SE_diff
+
+df <- (((var1/n1)+(var2/n2))^2) / ((((var1/n1)^2)/(n1-1)) + (((var2/n2)^2)/(n2-1)))
+
+# The Welch Test probability
+2*pt(q = t, df = df, lower.tail = F)
+
+```
+
+> Welch Confidence interval for the difference in means
+
+To obtain the confidence interval for the difference in means, the Welch *t*-test uses the same method as the regular two-sample *t*-test but with the Welch-modified standard error.
+
+$({\bar{Y_1}-\bar{Y_2}})-t_{\alpha(2),df} \times SE_{\bar{Y_1}-\bar{Y_2}} < \mu_1 -\mu_2< ({\bar{Y_1}-\bar{Y_2}})+t_{\alpha(2),df} \times SE_{\bar{Y_1}-\bar{Y_2}}$
+
+
+```{r}
+t_alpha <- abs(qt(p = alpha/2, df = df))
+
+lower_lim <- (mean1 - mean2) - t_alpha*SE_diff
+lower_lim
+upper_lim <- (mean1 - mean2) + t_alpha*SE_diff
+upper_lim
+
+```
+
+# Bootstrapping and simulation (Chapter 19)
+
+## Simulation
+
+If you are *simulating* a variable, you use randomness and specified model.
+This is using the random functions such as:
+
+  * `sample()`
+  * `rbinom()`
+  * `rpois()`
+  * `rnorm()`
+  * `rt()`
+  
+
+## Bootstrapping
+
+If you are *bootstrapping* you are "extending" your data set using repeated sub-sampling of your sample to artificially increase your sample size.
+
+
+Bootstrapping expample from the book:
+
+In this example, we try to determine the median from a sample of 20 using bootstrapping.
+
+
+```{r}
+set.seed(1)
+values <- c(0.30, 0.16, -0.24, -0.25, 0.36, 0.17, 0.11, 0.12, 0.34, 0.32, 0.71, 0.09, 1.12, 0.01, -0.24, 0.24, -0.30, -0.16)
+
+bootstrap_median <- rep(NA, 10000)
+
+for (i in 1:length(bootstrap_median)){
+  bootstrap_median[i] <- median(sample(values, length(values), replace = TRUE))
+}
+
+bootstrap_table <- tibble(median = bootstrap_median)
+```
+
+```{r}
+ggplot(bootstrap_table)+
+  geom_histogram(aes(x = median), color = "black", fill = "firebrick", binwidth = 0.01)+
+  theme_classic()+
+  scale_x_continuous(expand = c(0,0))+
+  scale_y_continuous(expand = c(0,0))
+```
+
+> The bootstrap standard error
+
+The bootstrap standard error is the standard deviation of the bootstrap replicate estimates.
+```{r}
+sd(bootstrap_median)
+```
+The bootstrap standard error is usually smaller than the true standard error.
+
+
+# End of revised formelsamling
+
+Thank you for reading, I hope you enjoyed.
