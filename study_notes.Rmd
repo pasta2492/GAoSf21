@@ -80,16 +80,57 @@ Double brackets are used to get the **output** *values* as a vector and not a pa
 #data[2,1:2] # gives r2
 #data[1, 1:2] # gives r1
 
+x <- sample(x = c("A", "B", "O"), size = 1000, replace = TRUE)
+table(x)
+table(x)[["A"]]
 ```
+
+
 
 
 #### filter()
 
-The
+The filter command evaluates if a statement is true for all values and returns those that are:
+```df %>% filter(column >= 8) ```  
 
 #### summarise() and group_by()
 
+```{r}
+
+empty_vector <- rep(NA,100)
+
+for (i in (1:length(empty_vector))) {
+  tmp_vector    <- sample(x = c("A", "B", "O"), size = 10, replace = TRUE)
+  empty_vector[i] <- sum(tmp_vector=="A")
+}
+
+# Tibble with 1 column and 100 samples of "A"-counts
+simulations <- tibble(sum_A = empty_vector)
+
+
+pd <- simulations %>%
+  group_by(sum_A) %>% # Group by value
+  summarise(n  = n(), # Number of counts of that value
+            nf = n()/nrow(simulations), # Fraction of all counts
+            squared = n()^2 # Proving a point
+  )
+
+pd
+```
+
+Or it can be used to count extreme values, but there are different methods for that, and the exam assignment will probably only ask for one value pr. question.
+```{r}
+simulations %>%
+  summarise(rows           = n(),
+            larger_than_8  = sum(sum_A >=8),
+            fraction_lager_than_8        = larger_than_8/nrow(simulations),
+            smaller_than_2 = sum(sum_A <= 2))
+```
+
+
 #### reshape2::melt() and facet_wrap() for plots
+
+These methods are demonstrated in the document.
 
 ### Histogram
 ```{r}
@@ -177,11 +218,13 @@ What the coefficient of variation tells us: The coefficient of variation tells u
 
 ### Standard Error
 
-$SE_\bar{Y} = \sqrt{\frac{s^2}{n}}= \frac{s}{\sqrt{n}} $
+
+$SE_\bar{Y} = \sqrt{\frac{s^2}{n}}= \frac{s}{\sqrt{n}}$
 
 If you want the mean and the standard error-interval use:
 
 `mean_se(Y)`
+
 This function has output in a vector of length 3 with the values mean, mean-SE, mean+SE
 
 R does not have a built-in function to only provide you with the standard error of a sample, so you might as well define your own functions or do it manually:
@@ -328,6 +371,7 @@ These are just visualizations of the combinations of events and their probabilit
 
 $P(A|B) = \frac{P(B|A)\cdot P(A)}{P(B)}$
 In regards to probability "|" means "given that" some event has also happened.
+
 > General multiplication rule:
 
 $P(A\wedge B) = P(A)\cdot P(B|A) = P(B) \cdot P(A|B)$
@@ -440,7 +484,17 @@ Here, the critical value is plotted as a line. This line is the *one tailed* cri
 
 By *assuming* the $\bar{Y}$ determined is the true value or if the true value is known, the power of the test can be determined. 
 
-In the example above, that would be $P(X<X_{\alpha=0.05, H_0})$ or `pnorm(q = X_crit, mean = mean_Y, sd = sd)`. In the tests, where R has a power-function, it will be provided in the following sections.
+In the example above, that would be $P(X<X_{\alpha=0.05, H_0})$ or `pnorm(q = X_crit, mean = mean_Y, sd = sd)`. In the tests, where R has a power-function, it will be provided here:
+
+```
+power.t.test(n = NULL, delta = NULL, sd = 1, sig.level = 0.05,
+             power = NULL,
+             type = c("two.sample", "one.sample", "paired"),
+             alternative = c("two.sided", "one.sided"))
+```
+
+This is a very flexible command that takes whatever you have and returns what
+is missing.
 
 # Statistical tests
 
@@ -788,7 +842,7 @@ chisq.test(data, correct = TRUE)
 
 > dchisq()
 
-You will probably not need this function, but it gives you the probability density which is the probability (y-value) for *one* exact point 8($\chi^2$-value). It was used to make the diagram in the beginning of this section.
+You will probably not need this function, but it gives you the probability density which is the probability (y-value) for *one* exact point ($\chi^2$-value). It was used to make the diagram in the beginning of this section.
 
 `dchisq(x, df)`
 
@@ -800,7 +854,7 @@ Fisher's exact test finds the P-value of getting a table as extreme or more extr
 
 > When to use Fisher's exact test?
 
-Every time you want the probability of having the specific ratios presented in a $2\times 2$ table. This method uses odds-ratios to describe the deviations in the table, when the rules for the $\chi^2$-test are not met (more than 20% of the expected values are less than 5). 
+Every time you want the probability of having the specific ratios presented in a $2\times 2$ table. This method uses odds-ratios to describe the deviations in the table, when the rules for the $\chi^2$-test are not met **(more than 20% of the expected values are less than 5)**. 
 
 To calculate it, use:
 ```{r}
@@ -824,6 +878,7 @@ colnames(data) <- treatment
 ```{r, echo = FALSE}
 knitr::kable(data)
 ```
+
 > When to use RR or OR on a contingency table?
 
 If you want to compare two probabilities from a $2\times 2$ table, you can analyze the *risk* and *relative risk* or the *odds* and *odds ratio*, depending on what the question asks for. 
@@ -950,7 +1005,7 @@ Where $E(X) = \bar{X} = \lambda$ and $var(X) = \lambda$.
 
   * If the variance is greater than the mean, the successes are clumped.
   * If the variance is less than the mean, successes are more evenly distributed than expected by the Poisson distribution.
-  * With the mean being equal to the variance you would expect $\frac{\bar{X}}{var(X)}=1$
+  * With the mean being equal to the variance you would expect $\frac{var(X)}{\bar{X}}=1$
 
 The Poisson distribution can be used if you have a *discrete* outcome of your experiment.
 
@@ -1101,6 +1156,7 @@ ggplot(data, aes(x = x, y = y))+
   xlab("Z")
 
 ```
+
 > When to use the normal distribution
 
 You use the normal distribution if you want to know how far a sample value is from the true mean.
